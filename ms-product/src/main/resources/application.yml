@@ -20,6 +20,9 @@ spring:
     properties:
       hibernate:
       dialect: org.hibernate.dialect.MySQL57Dialect
+  sleuth:
+    sampler:
+      probability: 1.0
 springdoc:
   api-docs:
     path: product-service/v3/api-docs
