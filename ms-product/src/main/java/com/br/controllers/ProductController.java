@@ -31,14 +31,21 @@ public class ProductController {
 	ProductService ProductService;
 
 	@Operation(description = "Get all products")
-	@GetMapping
-	private List<Product>getProducts() {
-		return ProductService.getAllProducts();
+	@GetMapping("/{from}/{to}")
+	private List<Product>getProducts(
+			@PathVariable("from") String from,
+			@PathVariable("to") String to
+			) {
+		return ProductService.getAllProducts(from, to);
 	}
 	
-	@GetMapping("/{id}")
-	private ResponseEntity<Product> getProduct(@PathVariable("id") int id) {
-		 Optional<Product> Product = Optional.ofNullable(ProductService.getProductById(id));
+	@GetMapping("/{id}/{from}/{to}")
+	private ResponseEntity<Product> getProduct(
+			@PathVariable("id") int id,
+			@PathVariable("from") String from,
+			@PathVariable("to") String to
+			) {
+		 Optional<Product> Product = Optional.ofNullable(ProductService.getProductByIdCurrency(id, from, to));
 	        if(Product.isPresent())
 	            return new ResponseEntity<Product>(Product.get(), HttpStatus.OK);
 	        else
