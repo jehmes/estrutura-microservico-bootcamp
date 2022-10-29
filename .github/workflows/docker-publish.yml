@@ -65,10 +65,10 @@ jobs:
           docker tag ${{secrets.DOCKER_USERNAME}}/api-gateway:0.0.1-SNAPSHOT ${{secrets.DOCKER_USERNAME}}/api-gateway-bc:${{github.run_id}}
           docker tag ${{secrets.DOCKER_USERNAME}}/api-gateway:0.0.1-SNAPSHOT ${{secrets.DOCKER_USERNAME}}/api-gateway-bc:latest      
           
-          docker push ${{secrets.DOCKER_USERNAME}}/product-service-bc:${{github.run_id}}
-          docker push ${{secrets.DOCKER_USERNAME}}/product-service-bc:latest
-          docker push ${{secrets.DOCKER_USERNAME}}/cambio-service-bc:${{github.run_id}}
-          docker push ${{secrets.DOCKER_USERNAME}}/cambio-service-bc:latest
+          docker push ${{secrets.DOCKER_USERNAME}}/product-service:${{github.run_id}}
+          docker push ${{secrets.DOCKER_USERNAME}}/product-service:latest
+          docker push ${{secrets.DOCKER_USERNAME}}/cambio-service:${{github.run_id}}
+          docker push ${{secrets.DOCKER_USERNAME}}/cambio-service:latest
           docker push ${{secrets.DOCKER_USERNAME}}/eureka-server-bc:${{github.run_id}}
           docker push ${{secrets.DOCKER_USERNAME}}/eureka-server-bc:latest
           docker push ${{secrets.DOCKER_USERNAME}}/api-gateway-bc:${{github.run_id}}
