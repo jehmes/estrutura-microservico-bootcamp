@@ -1,0 +1,143 @@
+version: '3.4'
+
+services:
+  zipkin-server:
+    image: openzipkin/zipkin:2.23.2
+    restart: always
+    ports:
+      - 9411:9411
+    depends_on:
+      - rabbit-mq
+    environment:
+      RABBIT_URI: amqp://guest:guest@rabbit-mq:5672
+    networks:
+      - jehmes-network
+
+  rabbit-mq:
+    image: rabbitmq:3.8.14-management
+    ports:
+      - 5672:5672
+      - 15672:15672
+    networks:
+      - jehmes-network
+      
+  cambio-db:
+    image: mysql:8.0.27
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      TZ: America/Sao_Paulo
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: docker
+      MYSQL_PASSWORD: root
+      MYSQL_DATABASE: cambio-db
+      MYSQL_ROOT_HOST: '%'
+      MYSQL_TCP_PORT: 3308
+    ports:
+      - 3308:3308
+    expose:
+      - 3308
+    networks:
+      - jehmes-network
+      
+  product-db:
+    image: mysql:8.0.27
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      TZ: America/Sao_Paulo
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: docker
+      MYSQL_PASSWORD: root
+      MYSQL_DATABASE: product-db
+      MYSQL_ROOT_HOST: '%'
+      MYSQL_TCP_PORT: 3310
+    ports:
+      - 3310:3310
+    expose:
+      - 3310
+    networks:
+      - jehmes-network
+      
+  eureka-server:
+    image: jehmes/eureka-server-bc:0.0.1-SNAPSHOT
+    ports:
+      - 8761:8761
+    networks:
+      - jehmes-network
+      
+  api-gateway:
+    image: jehmes/api-gateway:0.0.2-SNAPSHOT
+    ports:
+      - 8765:8765
+    depends_on:
+      - eureka-server
+      - rabbit-mq
+    environment:
+      EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://eureka-server:8761/eureka
+      SPRING.ZIPKIN.BASEURL: http://zipkin-server:9411/
+      RABBIT_URI: amqp://guest:guest@rabbit-mq:5672
+      SPRING_RABBITMQ_HOST: rabbit-mq
+      SPRING_ZIPKIN_SENDER_TYPE: rabbit
+    networks:
+      - jehmes-network
+  
+  cambio-service:
+    image: jehmes/cambio-service-bc:0.0.3-SNAPSHOT
+    restart: always
+    build:
+      context: .
+      dockerfile: ms-cambio/Dockerfile
+    environment:
+      TZ: America/Sao_Paulo
+      EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://eureka-server:8761/eureka
+      SPRING.ZIPKIN.BASEURL: http://zipkin-server:9411/
+      RABBIT_URI: amqp://guest:guest@rabbit-mq:5672
+      SPRING_RABBITMQ_HOST: rabbit-mq
+      SPRING_ZIPKIN_SENDER_TYPE: rabbit
+      SPRING.DATASOURCE.URL: jdbc:mysql://cambio-db:3308/cambio-db?useSSL=false&serverTimezone=UTC&enabledTLSProtocols=TLSv1.2
+      SPRING.DATASOURCE.USERNAME: root
+      SPRING.DATASOURCE.PASSWORD: root
+      # SPRING.FLYWAY.URL: jdbc:mysql://cambio-db:3308/cambio-db?useSSL=false&serverTimezone=UTC&enabledTLSProtocols=TLSv1.2
+      # SPRING.FLYWAY.USER: root
+      # SPRING.FLYWAY.PASSWORD: root
+    ports:
+      - 8000:8000
+    depends_on:
+      - eureka-server
+      - cambio-db
+      - rabbit-mq
+    networks:
+      - jehmes-network
+      
+  product-service:
+    image: jehmes/ms-product-bc:0.0.3-SNAPSHOT
+    restart: always
+    build:
+      context: .
+      dockerfile: ms-product/Dockerfile
+    environment:
+      TZ: America/Sao_Paulo
+      EUREKA.CLIENT.SERVICEURL.DEFAULTZONE: http://eureka-server:8761/eureka
+      SPRING.ZIPKIN.BASEURL: http://zipkin-server:9411/
+      RABBIT_URI: amqp://guest:guest@rabbit-mq:5672
+      SPRING_RABBITMQ_HOST: rabbit-mq
+      SPRING_ZIPKIN_SENDER_TYPE: rabbit
+      SPRING.DATASOURCE.URL: jdbc:mysql://product-db:3310/product-db?useSSL=false&serverTimezone=UTC&enabledTLSProtocols=TLSv1.2
+      SPRING.DATASOURCE.USERNAME: root
+      SPRING.DATASOURCE.PASSWORD: root
+      # SPRING.FLYWAY.URL: jdbc:mysql://book-db:3310/book_service?useSSL=false&serverTimezone=UTC&enabledTLSProtocols=TLSv1.2
+      # SPRING.FLYWAY.USER: root
+      # SPRING.FLYWAY.PASSWORD: root
+    ports:
+      - 8100:8100
+    depends_on:
+      - eureka-server
+      - product-db
+      - rabbit-mq
+    networks:
+      - jehmes-network
+  
+networks:
+  jehmes-network:
+    driver: bridge
