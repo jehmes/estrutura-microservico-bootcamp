@@ -111,7 +111,7 @@ services:
       - jehmes-network
       
   product-service:
-    image: jehmes/ms-product-bc
+    image: jehmes/product-service-bc
     restart: always
     build:
       context: .
