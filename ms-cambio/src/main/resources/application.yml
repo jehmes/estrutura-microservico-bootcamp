@@ -21,6 +21,10 @@ spring:
     properties:
       hibernate:
       dialect: org.hibernate.dialect.MySQL57Dialect
+    flyway:
+      url: jdbc:mysql://localhost:3306/ms_cambio?useTimezone=true&serverTimezone=UTC
+      user: root
+      password: root
   sleuth:
     sampler:
       probability: 1.0
