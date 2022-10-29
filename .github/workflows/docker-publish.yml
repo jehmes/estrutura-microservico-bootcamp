@@ -1,0 +1,72 @@
+name: Continuos Integration with Github
+
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+on:
+  [push]
+ 
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      # This is used to complete the identity challenge
+      # with sigstore/fulcio when running outside of PRs.
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Docker Login       
+        uses: docker/login-action@v2.1.0        
+        with:
+          username:  ${{secrets.DOCKER_USERNAME}}
+          password:  ${{secrets.DOCKER_PASSWORD}}
+          
+      - name: Setup Java JDK
+        uses: actions/setup-java@v3.6.0
+        with:
+          java-version: '11'
+          distribution: 'adopt'
+          
+      - name: Build Eureka Naming Server Container Image
+        working-directory: ./eureka-server
+        run: mvn spring-boot:build-image -DskipTests
+        
+      - name: API Gateway Container Image
+        working-directory: ./api-gateway
+        run: mvn spring-boot:build-image -DskipTests
+        
+      - name: Build Cambio Microservice Jar
+        working-directory: ./ms-cambio
+        run: mvn clean package -DskipTests
+        
+      - name: Build Product Microservice Jar
+        working-directory: ./ms-product
+        run: mvn clean package -DskipTests
+        
+      - name: Docker Compose Build
+        working-directory: .
+        run: docker-compose build
+        
+      - name: Push to Docker Hub Container REgistry
+        run: |
+          docker tag ${{secrets.DOCKER_USERNAME}}/eureka-server:0.0.1-SNAPSHOT ${{secrets.DOCKER_USERNAME}}/eureka-server-bc:${{github.run_id}}
+          docker tag ${{secrets.DOCKER_USERNAME}}/eureka-server:0.0.1-SNAPSHOT ${{secrets.DOCKER_USERNAME}}/eureka-server-bc:latest
+          docker tag ${{secrets.DOCKER_USERNAME}}/api-gateway:0.0.1-SNAPSHOT ${{secrets.DOCKER_USERNAME}}/api-gateway-bc:${{github.run_id}}
+          docker tag ${{secrets.DOCKER_USERNAME}}/api-gateway:0.0.1-SNAPSHOT ${{secrets.DOCKER_USERNAME}}/api-gateway-bc:latest
+          docker tag ${{secrets.DOCKER_USERNAME}}/ms-cambio:latest ${{secrets.DOCKER_USERNAME}}/ms-cambio-bc:${{github.run_id}}
+          docker tag ${{secrets.DOCKER_USERNAME}}/ms-product:latest ${{secrets.DOCKER_USERNAME}}/ms-product-bc:${{github.run_id}}
+          docker push ${{secrets.DOCKER_USERNAME}}/eureka-server-bc:${{github.run_id}}
+          docker push ${{secrets.DOCKER_USERNAME}}/eureka-server-bc:latest
+          docker push ${{secrets.DOCKER_USERNAME}}/api-gateway-bc:${{github.run_id}}
+          docker push ${{secrets.DOCKER_USERNAME}}/api-gateway-bc:latest
+          docker push ${{secrets.DOCKER_USERNAME}}/ms-cambio-bc:${{github.run_id}}
+          docker push ${{secrets.DOCKER_USERNAME}}/ms-cambio-bc:latest
+          docker push ${{secrets.DOCKER_USERNAME}}/ms-product-bc:${{github.run_id}}
+          docker push ${{secrets.DOCKER_USERNAME}}/ms-product-bc:latest
