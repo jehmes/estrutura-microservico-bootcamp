@@ -67,7 +67,7 @@ services:
       - jehmes-network
       
   api-gateway:
-    image: jehmes/api-gateway:0.0.2-SNAPSHOT
+    image: jehmes/api-gateway
     ports:
       - 8765:8765
     depends_on:
@@ -83,7 +83,7 @@ services:
       - jehmes-network
   
   cambio-service:
-    image: jehmes/cambio-service-bc:0.0.3-SNAPSHOT
+    image: jehmes/cambio-service-bc
     restart: always
     build:
       context: .
@@ -111,7 +111,7 @@ services:
       - jehmes-network
       
   product-service:
-    image: jehmes/ms-product-bc:0.0.3-SNAPSHOT
+    image: jehmes/ms-product-bc
     restart: always
     build:
       context: .
